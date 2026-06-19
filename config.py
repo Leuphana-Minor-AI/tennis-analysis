@@ -10,7 +10,7 @@ ROBOFLOW_CONFIG = {
 }
 
 # YOLOv8 Modellgröße
-MODEL_SIZE = "m"  # Options: "n" (nano), "s" (small), "m" (medium), "l" (large), "x" (xlarge)
+MODEL_SIZE = "x"  # Options: "n" (nano), "s" (small), "m" (medium), "l" (large), "x" (xlarge)
 
 # Training-Parameter
 TRAINING_CONFIG = {

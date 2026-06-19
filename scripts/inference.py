@@ -219,37 +219,62 @@ def predict_frames(model_path, frames_dir="data/frames", max_frames=10, conf_thr
 
 
 if __name__ == "__main__":
-    # Suche nach dem Modell
-    model_candidates = [
-        os.path.join(MODEL_DIR, "yolo26s-pose.pt"),  # Hochgeladenes Modell
-        os.path.join(MODEL_DIR, "tennis_detector", "weights", "best.pt"),  # Trainiertes Modell
+    # Define models to run
+    models_to_run = [
+        {
+            "path": os.path.join(MODEL_DIR, "yolo26s-pose.pt"),
+            "name": "yolo26s-pose",
+            "save_dir": "results/predictions/yolo26s-pose"
+        },
+        {
+            "path": os.path.join(MODEL_DIR, "yolov8x.pt"),
+            "name": "yolov8x",
+            "save_dir": "results/predictions/yolov8x"
+        }
     ]
     
-    best_model = None
-    for candidate in model_candidates:
-        if os.path.exists(candidate):
-            best_model = candidate
-            break
+    # Check which models exist
+    available_models = []
+    for model_info in models_to_run:
+        if os.path.exists(model_info["path"]):
+            available_models.append(model_info)
     
-    if best_model is None:
-        print(f"ERROR: No model found")
-        print(f"Versucht: {model_candidates}")
+    if not available_models:
+        print(f"ERROR: No models found")
+        print(f"Expected models: {[m['path'] for m in models_to_run]}")
         sys.exit(1)
     
-    print(f"Using model: {best_model}\n")
+    print(f"🚀 Running inference with {len(available_models)} models...\n")
     
-    # Beispiel: Vorhersage auf Bild oder teste auf Frames-Verzeichnis
-    if len(sys.argv) > 1:
-        image_path = sys.argv[1]
-        predict_image(best_model, image_path)
-    else:
-        # Automatisch auf Frames-Verzeichnis testen
-        frames_dir = "data/frames"
-        if os.path.exists(frames_dir):
-            predict_frames(best_model, frames_dir, max_frames=20)
+    # Run inference for each model
+    results_summary = {}
+    for model_info in available_models:
+        print(f"\n{'='*60}")
+        print(f"Model: {model_info['name']}")
+        print(f"Path: {model_info['path']}")
+        print(f"{'='*60}\n")
+        
+        # Beispiel: Vorhersage auf Bild oder teste auf Frames-Verzeichnis
+        if len(sys.argv) > 1:
+            image_path = sys.argv[1]
+            predict_image(model_info["path"], image_path)
         else:
-            print("Usage:")
-            print("  python scripts/inference.py <image_path>")
-            print("\nExample:")
-            print("  python scripts/inference.py data/frames/frame_0000.jpg")
+            # Automatisch auf Frames-Verzeichnis testen
+            frames_dir = "data/frames"
+            if os.path.exists(frames_dir):
+                detections = predict_frames(model_info["path"], frames_dir, max_frames=20, save_dir=model_info["save_dir"])
+                results_summary[model_info["name"]] = detections
+            else:
+                print("Usage:")
+                print("  python scripts/inference.py <image_path>")
+                print("\nExample:")
+                print("  python scripts/inference.py data/frames/frame_0000.jpg")
+    
+    # Print summary
+    print(f"\n\n{'='*60}")
+    print("📊 SUMMARY - Comparison of Models")
+    print(f"{'='*60}")
+    for model_name, detections in results_summary.items():
+        print(f"  {model_name}: {detections} objects detected")
+    print(f"{'='*60}\n")
     
