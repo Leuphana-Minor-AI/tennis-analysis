@@ -45,6 +45,40 @@ python scripts/inference.py
 # - results/predictions/yolov8x/       (YOLOv8x Ergebnisse)
 ```
 
+### 5. Video-Verarbeitung (Neu)
+
+#### Option A: Komplette Pipeline (Video → Frames → Inference → Cleanup)
+Extrahiert Frames aus Video, führt Inference mit beiden Modellen durch, und löscht Frames automatisch:
+
+```bash
+# Verarbeite Video mit default Video.mp4
+python scripts/process_video.py
+
+# Oder spezifisches Video
+python scripts/process_video.py data/videos/V001.mp4
+python scripts/process_video.py data/videos/V002.mp4
+```
+
+#### Option B: yolov8x auf 200 zufällige Frames
+Führt yolov8x auf 200 zufällig ausgewählten Frames durch:
+
+```bash
+python scripts/run_yolov8x_200frames.py
+```
+
+**Features:**
+- ✅ Wählt 200 zufällige Frames aus
+- ✅ Speichert annotierte Ergebnisse
+- ✅ Löscht Frames automatisch nach Verarbeitung
+- ✅ Speicheroptimiert mit `stream=True`
+
+#### Option C: Beide Modelle auf 100 zufällige Frames
+Führt yolov8x UND yolo26s-pose auf 100 Frames durch:
+
+```bash
+python scripts/run_inference_on_frames.py
+```
+
 ---
 
 ## 📁 Projektstruktur
@@ -182,6 +216,117 @@ Ergebnisse werden in separaten Verzeichnissen gespeichert zur leichten Vergleich
 ERROR: No models found
 ```
 **Lösung:** Stelle sicher, dass folgende Dateien im `models/` Verzeichnis vorhanden sind:
+- `yolov8x.pt`
+- `yolo26s-pose.pt`
+
+---
+
+## 📊 Neue Video-Processing Scripts
+
+### 1. **process_video.py** - Komplette Pipeline
+Extrahiert Frames aus Video, führt Inference mit **beiden Modellen** durch, speichert Ergebnisse, und löscht Frames automatisch.
+
+**Verwendung:**
+```bash
+python scripts/process_video.py data/videos/V001.mp4
+python scripts/process_video.py data/videos/V002.mp4
+```
+
+**Workflow:**
+1. 🎬 Extrahiert alle Frames aus Video
+2. 🤖 Führt yolov8x aus
+3. 🤖 Führt yolo26s-pose aus
+4. 💾 Speichert annotierte Frames in `results/predictions/`
+5. 🗑️  Löscht extrahierte Frames automatisch
+
+---
+
+### 2. **run_yolov8x_200frames.py** - yolov8x auf 200 Frames
+Wählt **200 zufällige Frames** aus, führt **yolov8x** durch, speichert Ergebnisse und löscht Frames.
+
+**Verwendung:**
+```bash
+python scripts/run_yolov8x_200frames.py
+```
+
+**Features:**
+- ✅ Zufällige Frame-Auswahl (200 Frames)
+- ✅ Speichert annotierte Ergebnisse mit Bounding Boxes
+- ✅ Detaillierte Statistiken pro Klasse
+- ✅ Top 10 Frames mit meisten Detektionen
+- ✅ Automatisches Cleanup nach Verarbeitung
+- ✅ Speicheroptimiert mit `stream=True`
+
+**Beispiel Output:**
+```
+Bearbeitete Frames: 200
+Frames mit Detektionen: 194 (97.0%)
+Gesamte Detektionen: 1,332
+Durchschn. Detektionen pro Frame: 6.87
+
+Klassen:
+  - person: 1,206 (90.5%)
+  - tennis racket: 53 (4.0%)
+  - sports ball: 31 (2.3%)
+```
+
+---
+
+### 3. **run_inference_on_frames.py** - Beide Modelle auf 100 Frames
+Wählt **100 zufällige Frames** aus, führt **beide Modelle** durch, vergleicht Ergebnisse.
+
+**Verwendung:**
+```bash
+python scripts/run_inference_on_frames.py
+```
+
+**Features:**
+- ✅ Zufällige Frame-Auswahl (100 Frames)
+- ✅ Führt yolov8x UND yolo26s-pose aus
+- ✅ Speichert annotierte Ergebnisse für beide Modelle
+- ✅ Vergleicht Modell-Performance
+- ✅ Automatisches Cleanup
+- ✅ Speicheroptimiert
+
+---
+
+## 💾 Memory Optimization
+
+Alle Scripts verwenden `stream=True` bei der Inference:
+```python
+results = model.predict(image_path, conf=conf_threshold, stream=True)
+result = next(results)
+```
+
+**Vorteile:**
+- ✅ Keine RAM-Warnings für große Datenmengen
+- ✅ Iteratives Verarbeiten statt alles in RAM zu halten
+- ✅ Effizient für lange Videosequenzen
+
+---
+
+## 🗑️ Automatic Cleanup
+
+Alle neuen Scripts löschen extrahierte Frames automatisch nach Verarbeitung:
+```
+🗑️  Lösche 22929 Frames aus data/frames...
+✅ 22929 Frames gelöscht
+```
+
+**Ergebnisse werden NICHT gelöscht**, nur die temporären Frames.
+
+---
+
+## 📁 Skripte Übersicht
+
+| Script | Funktion | Modelle | Frames | Cleanup |
+|--------|----------|---------|--------|---------|
+| `process_video.py` | Video → Inference | yolov8x, yolo26s-pose | Alle | ✅ |
+| `run_yolov8x_200frames.py` | Random Sampling | yolov8x | 200 | ✅ |
+| `run_inference_on_frames.py` | Random Sampling | yolov8x, yolo26s-pose | 100 | ✅ |
+| `inference.py` | Batch Inference | yolov8x, yolo26s-pose | Alle | ❌ |
+
+---
 - `yolov8x.pt`
 - `yolo26s-pose.pt`
 
