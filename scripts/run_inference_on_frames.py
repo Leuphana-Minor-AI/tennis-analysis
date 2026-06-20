@@ -104,8 +104,9 @@ def run_inference_on_random_frames(frames_dir="data/frames", num_frames=100, con
         for i, frame_file in enumerate(selected_frames):
             frame_path = os.path.join(frames_dir, frame_file)
             
-            results = model.predict(frame_path, conf=conf_threshold, verbose=False, save=False)
-            result = results[0]
+            # Use stream=True to prevent RAM accumulation
+            results = model.predict(frame_path, conf=conf_threshold, verbose=False, save=False, stream=True)
+            result = next(results)
             
             # Save annotated image
             annotated_image = result.plot()
@@ -154,6 +155,38 @@ def run_inference_on_random_frames(frames_dir="data/frames", num_frames=100, con
     return all_results
 
 
+def cleanup_frames(frames_dir="data/frames"):
+    """
+    Delete all frames from directory to free up space
+    
+    Args:
+        frames_dir: Directory containing frames to delete
+    """
+    
+    if not os.path.exists(frames_dir):
+        print(f"⚠️  Verzeichnis nicht gefunden: {frames_dir}")
+        return
+    
+    frame_files = [f for f in os.listdir(frames_dir) if f.endswith('.jpg')]
+    
+    if not frame_files:
+        print(f"ℹ️  Keine Frames zum Löschen in {frames_dir}")
+        return
+    
+    print(f"\n🗑️  Lösche {len(frame_files)} Frames aus {frames_dir}...")
+    
+    deleted_count = 0
+    for frame_file in frame_files:
+        try:
+            frame_path = os.path.join(frames_dir, frame_file)
+            os.remove(frame_path)
+            deleted_count += 1
+        except Exception as e:
+            print(f"   ⚠️  Fehler beim Löschen von {frame_file}: {e}")
+    
+    print(f"✅ {deleted_count} Frames gelöscht")
+
+
 def main():
     """
     Main function
@@ -187,6 +220,9 @@ def main():
             print(f"  Klassen gefunden: {', '.join(stats['class_counts'].keys())}")
         print(f"  💾 Annotierte Frames gespeichert: results/predictions/{model_name}/")
         print()
+    
+    # Cleanup frames after inference
+    cleanup_frames("data/frames")
     
     print(f"{'='*70}")
     print("✅ Verarbeitung abgeschlossen!")

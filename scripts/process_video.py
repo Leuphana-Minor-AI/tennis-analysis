@@ -136,28 +136,30 @@ def run_inference_on_frames(frames_dir, model_name="yolov8x", conf_threshold=0.5
     
     model = YOLO(model_path)
     
-    # Run inference on all frames in directory
+    # Run inference on all frames in directory with stream=True to prevent RAM accumulation
     results = model.predict(
         frames_dir,
         conf=conf_threshold,
         save=False,
-        verbose=False
+        verbose=False,
+        stream=True
     )
     
     # Save results
     output_dir = f"results/predictions/{model_name}"
     os.makedirs(output_dir, exist_ok=True)
     
-    print(f"\n📊 Verarbeite {len(results)} Bilder...")
+    print(f"\n📊 Verarbeite Bilder...")
     
     detection_stats = {
-        "total_frames": len(results),
+        "total_frames": 0,
         "frames_with_detections": 0,
         "total_detections": 0,
         "class_counts": {}
     }
     
     for i, result in enumerate(results):
+        detection_stats["total_frames"] += 1
         if result.boxes:
             detection_stats["frames_with_detections"] += 1
             detection_stats["total_detections"] += len(result.boxes)
@@ -166,8 +168,8 @@ def run_inference_on_frames(frames_dir, model_name="yolov8x", conf_threshold=0.5
                 class_name = result.names[int(box.cls)]
                 detection_stats["class_counts"][class_name] = detection_stats["class_counts"].get(class_name, 0) + 1
         
-        if (i + 1) % 50 == 0 or (i + 1) == len(results):
-            print(f"   ✓ {i + 1}/{len(results)} Frames verarbeitet...")
+        if (i + 1) % 50 == 0:
+            print(f"   ✓ {i + 1} Frames verarbeitet...")
     
     print(f"\n✅ Inference abgeschlossen!")
     print(f"\n📈 Statistik ({model_name}):")
@@ -179,6 +181,38 @@ def run_inference_on_frames(frames_dir, model_name="yolov8x", conf_threshold=0.5
         print(f"      {class_name}: {count}")
     
     return results, detection_stats
+
+
+def cleanup_frames(frames_dir="data/frames"):
+    """
+    Delete all frames from directory to free up space
+    
+    Args:
+        frames_dir: Directory containing frames to delete
+    """
+    
+    if not os.path.exists(frames_dir):
+        print(f"⚠️  Verzeichnis nicht gefunden: {frames_dir}")
+        return
+    
+    frame_files = [f for f in os.listdir(frames_dir) if f.endswith('.jpg')]
+    
+    if not frame_files:
+        print(f"ℹ️  Keine Frames zum Löschen in {frames_dir}")
+        return
+    
+    print(f"\n🗑️  Lösche {len(frame_files)} Frames aus {frames_dir}...")
+    
+    deleted_count = 0
+    for frame_file in frame_files:
+        try:
+            frame_path = os.path.join(frames_dir, frame_file)
+            os.remove(frame_path)
+            deleted_count += 1
+        except Exception as e:
+            print(f"   ⚠️  Fehler beim Löschen von {frame_file}: {e}")
+    
+    print(f"✅ {deleted_count} Frames gelöscht")
 
 
 def main():
@@ -227,6 +261,9 @@ def main():
         print(f"\n{model_name}:")
         print(f"  Frames mit Detektionen: {stats['frames_with_detections']}/{stats['total_frames']}")
         print(f"  Gesamte Detektionen: {stats['total_detections']}")
+    
+    # Cleanup frames after inference
+    cleanup_frames(frames_dir)
     
     print(f"\n✅ Verarbeitung abgeschlossen!")
     print(f"   Frames gespeichert: {frames_dir}")
