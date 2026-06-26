@@ -228,7 +228,7 @@ def main():
     if len(sys.argv) > 1:
         video_path = sys.argv[1]
     else:
-        video_path = "data/videos/Video.mp4"
+        video_path = "data/videos/V001.mp4"
     
     frames_dir = "data/frames"
     
