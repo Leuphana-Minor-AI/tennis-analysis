@@ -14,16 +14,16 @@ MODEL_SIZE = "x"  # Options: "n" (nano), "s" (small), "m" (medium), "l" (large),
 
 # Training-Parameter
 TRAINING_CONFIG = {
-    "epochs": 100,
-    "batch_size": 16,
-    "imgsz": 640,
+    "epochs": 100,  # Vollständig Training auf GPU
+    "batch_size": 32,  # Größer auf GPU
+    "imgsz": 640,  # Volle Auflösung
     "patience": 20,
-    "device": 0,  # GPU Nummer, -1 für CPU
+    "device": 0,  # GPU 0 (NVIDIA RTX 3050)
     "optimizer": "auto",
     "lr0": 0.01,
     "momentum": 0.937,
     "weight_decay": 0.0005,
-    "augment": True,
+    "augment": True,  # Data Augmentation aktiviert
 }
 
 # Pfade
