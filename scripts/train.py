@@ -16,7 +16,7 @@ except ImportError:
 from config import MODEL_SIZE, TRAINING_CONFIG, DATA_DIR, MODEL_DIR, RESULTS_DIR
 
 
-def train_model(data_yaml_path, model_size=MODEL_SIZE, config=TRAINING_CONFIG):
+def train_model(data_yaml_path, model_size=MODEL_SIZE, config=TRAINING_CONFIG, task="detect"):
     """
     Trainiert YOLOv8 Modell
     
@@ -24,6 +24,7 @@ def train_model(data_yaml_path, model_size=MODEL_SIZE, config=TRAINING_CONFIG):
         data_yaml_path: Pfad zur data.yaml
         model_size: Modellgröße (n, s, m, l, x)
         config: Training-Konfiguration
+        task: Modelltyp ("detect" oder "pose")
     
     Returns:
         Trainings-Ergebnisse
@@ -40,12 +41,14 @@ def train_model(data_yaml_path, model_size=MODEL_SIZE, config=TRAINING_CONFIG):
     
     print("🚀 Starte YOLOv8 Training...")
     print(f"   Modellgröße: {model_size}")
+    print(f"   Task: {task}")
     print(f"   Epochen: {config['epochs']}")
     print(f"   Batch-Größe: {config['batch_size']}")
     print(f"   Bilder-Größe: {config['imgsz']}")
     
     # Lade vortrainiertes Modell
-    model_name = f"yolov8{model_size}.pt"
+    model_suffix = "-pose" if task == "pose" else ""
+    model_name = f"yolov8{model_size}{model_suffix}.pt"
     print(f"   Modell: {model_name}")
     
     model = YOLO(model_name)
