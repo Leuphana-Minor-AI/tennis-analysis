@@ -45,20 +45,15 @@ python scripts/inference.py
 # - data/results/predictions/yolov8x/       (YOLOv8x Ergebnisse, falls vorhanden)
 ```
 
-### 5. Daten vorbereiten für Pose und Stroke
+### 5. Daten vorbereiten für Frame-Training
 
 ```bash
 # Frames extrahieren und dabei Video-Metadaten als Manifest speichern
 python scripts/process_video.py data/video/V001.mp4
-
-# Video-level Splits erstellen und Annotation-Ordner vorbereiten
-python scripts/prepare_dataset_splits.py
 ```
 
 Ergebnis:
 - Frames liegen in `data/frames/`
-- Split-Daten liegen in `data/splits/`
-- Annotierungsstubs für Pose und Stroke liegen unter `data/splits/{train,val,test}/`
 
 ### 6. Video-Verarbeitung (Neu)
 
@@ -125,8 +120,7 @@ tennis-analysis/
 │   ├── train.py               # Training
 │   ├── evaluate.py            # Evaluierung
 │   ├── inference.py           # Dual-Model Inference
-│   ├── process_video.py       # Frames extrahieren + Inference
-│   └── prepare_dataset_splits.py  # Video-level Splits + Annotation Scaffold
+│   └── process_video.py       # Frames extrahieren + Inference
 ├── config.py              # Zentrale Konfiguration
 ├── requirements.txt       # Python Dependencies
 └── README.md
@@ -140,7 +134,7 @@ tennis-analysis/
 
 - Platziere Video-Dateien in `data/video/`
 - Frame-Extraktion: Videos werden in Frames im `data/frames/` Verzeichnis konvertiert
-- Annotations im `data/annotations/` Verzeichnis sollten vorhanden sein
+- Die Frames werden direkt für Training und spätere Inference verwendet
 
 ### Schritt 2: Modelle verwenden
 
@@ -283,13 +277,12 @@ python scripts/run_yolov8x_200frames.py
 
 1. Video hochladen.
 2. Frames extrahieren und Metadaten sichern.
-3. Nach Video splitten mit `prepare_dataset_splits.py`.
-4. Wenn nötig, Pose-Keypoints auf den Roh-Frames annotieren und das Pose-Modell feinjustieren.
-5. Pose-Inference auf den Split-Frames ausführen und Keypoints pro Frame speichern.
-6. Aus den Keypoints feste Clip-Fenster bauen.
-7. Diese Clips mit Stroke-Labels versehen.
-8. Stroke-Klassifikator auf den Pose-Sequenzen trainieren.
-9. Auf Clip-Ebene evaluieren.
+3. Wenn nötig, Pose-Keypoints auf den Roh-Frames annotieren und das Pose-Modell feinjustieren.
+4. Pose-Inference auf den Frames ausführen und Keypoints pro Frame speichern.
+5. Aus den Keypoints feste Clip-Fenster bauen.
+6. Diese Clips mit Stroke-Labels versehen.
+7. Stroke-Klassifikator auf den Pose-Sequenzen trainieren.
+8. Auf Clip-Ebene evaluieren.
 
 Wichtig: Für Stroke-Klassifikation sollten keine gerenderten Inference-Bilder als Label-Ziel verwendet werden. Labels gehören auf Clip-Fenster und Keypoint-Sequenzen.
 ```

@@ -11,57 +11,51 @@ Goal: build a separate pose-to-stroke classification pipeline from the existing 
    - For pose model fine-tuning: label player keypoints directly on the extracted frame images.
    - For stroke classification: label a short clip window around the stroke using pose/keypoint sequences, not just a single frame or rendered inference image.
 
-3. Build a clean dataset split before training.
-   - Split by video, not by frame.
-   - Keep all frames from one rally or one source video in only one split.
-   - Use train, validation, and test folders that never overlap by source video.
-
-4. Fine-tune the pose model first if player keypoints need improvement.
+3. Fine-tune the pose model first if player keypoints need improvement.
    - Use the extracted frames with pose labels.
    - Train a pose model specialized for tennis camera angles, motion blur, and occlusion.
    - Validate keypoint quality before starting stroke classification.
 
-5. Run pose inference on the extracted frames.
+4. Run pose inference on the extracted frames.
    - Generate keypoints for each frame.
    - Store keypoints with their frame index, timestamp, and video ID.
    - Use the pose output as the input representation for stroke learning.
 
-6. Convert frame-level pose output into stroke sequences.
+5. Convert frame-level pose output into stroke sequences.
    - Group consecutive frames into fixed-length windows.
    - Attach one stroke label to each window, such as serve, forehand, backhand, volley, or overhead.
    - Use the frames surrounding the action, not only the impact frame.
 
-7. Train a temporal stroke classifier on the pose sequences.
+6. Train a temporal stroke classifier on the pose sequences.
    - Start with a simple baseline such as LSTM or TCN.
    - If needed, move to a Transformer-based sequence model.
    - Train on keypoint sequences rather than raw images.
 
-8. Evaluate the classifier at clip level.
+7. Evaluate the classifier at clip level.
    - Measure accuracy and F1 score per stroke class.
    - Check confusion between similar strokes such as forehand and backhand.
    - Review failure cases to see whether the issue is pose quality, window length, or class imbalance.
 
-9. Iterate on the data before changing the model.
+8. Iterate on the data before changing the model.
    - Add more examples for rare stroke types.
    - Adjust clip length if the classifier misses the swing context.
    - Improve pose labels if keypoints are unstable.
 
 Recommended order:
 - Step 1: freeze the extraction workflow.
-- Step 2: label pose and stroke data separately.
-- Step 3: build the video-level split and keep train/val/test separate by source video.
-- Step 4: fine-tune pose if necessary.
-- Step 5: run pose inference on the extracted frames and store keypoints with metadata.
-- Step 6: build clip windows from keypoint sequences and label stroke classes.
-- Step 7: train the stroke sequence classifier.
-- Step 8: evaluate and refine.
+- Step 2: label pose and stroke data separately on the extracted frames.
+- Step 3: fine-tune pose if necessary.
+- Step 4: run pose inference on the extracted frames and store keypoints with metadata.
+- Step 5: build clip windows from keypoint sequences and label stroke classes.
+- Step 6: train the stroke sequence classifier.
+- Step 7: evaluate and refine.
 
 Correct workflow summary:
 - Upload the source video.
 - Extract frames and keep the video metadata.
-- Split by video before labeling, using prepare_dataset_splits.py.
+- Use the extracted frames directly for training and inference.
 - If pose quality is not good enough, label raw frames with keypoints and fine-tune the pose model.
-- Run pose inference on the split frames to generate keypoints per frame.
+- Run pose inference on the frame set to generate keypoints per frame.
 - Turn those keypoints into fixed-length stroke clips.
 - Label the clips with stroke classes.
 - Train the stroke classifier on the pose sequences.
