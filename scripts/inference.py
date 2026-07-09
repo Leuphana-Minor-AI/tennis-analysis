@@ -152,7 +152,7 @@ def predict_webcam(model_path, conf_threshold=0.5, exit_key="q"):
     print("✅ Webcam beendet")
 
 
-def predict_frames(model_path, frames_dir="data/frames", max_frames=10, conf_threshold=0.5, save_dir="results/predictions"):
+def predict_frames(model_path, frames_dir="data/frames", max_frames=None, conf_threshold=0.5, save_dir="data/results/predictions"):
     """
     Vorhersage auf mehrere Bilder aus einem Verzeichnis
     
@@ -178,7 +178,9 @@ def predict_frames(model_path, frames_dir="data/frames", max_frames=10, conf_thr
         return None
     
     print(f"   Found: {len(frame_files)} images")
-    print(f"   Testing: {min(max_frames, len(frame_files))} images\n")
+    frames_to_test = frame_files if max_frames is None else frame_files[:max_frames]
+
+    print(f"   Testing: {len(frames_to_test)} images\n")
     
     # Create save directory
     os.makedirs(save_dir, exist_ok=True)
@@ -188,7 +190,7 @@ def predict_frames(model_path, frames_dir="data/frames", max_frames=10, conf_thr
     total_detections = 0
     tested_frames = 0
     
-    for frame_file in frame_files[:max_frames]:
+    for frame_file in frames_to_test:
         frame_path = os.path.join(frames_dir, frame_file)
         results = model.predict(frame_path, conf=conf_threshold, verbose=False)
         
@@ -206,7 +208,7 @@ def predict_frames(model_path, frames_dir="data/frames", max_frames=10, conf_thr
             print(f"   {frame_file}: {num_detections} objects detected")
         
         if tested_frames % 5 == 0:
-            print(f"   ... {tested_frames}/{min(max_frames, len(frame_files))} images processed")
+            print(f"   ... {tested_frames}/{len(frames_to_test)} images processed")
     
     print(f"\nTest completed!")
     print(f"   Images tested: {tested_frames}")
@@ -224,12 +226,12 @@ if __name__ == "__main__":
         {
             "path": os.path.join(MODEL_DIR, "yolo26s-pose.pt"),
             "name": "yolo26s-pose",
-            "save_dir": "results/predictions/yolo26s-pose"
+            "save_dir": "data/results/predictions/yolo26s-pose"
         },
         {
             "path": os.path.join(MODEL_DIR, "yolov8x.pt"),
             "name": "yolov8x",
-            "save_dir": "results/predictions/yolov8x"
+            "save_dir": "data/results/predictions/yolov8x"
         }
     ]
     
@@ -262,7 +264,7 @@ if __name__ == "__main__":
             # Automatisch auf Frames-Verzeichnis testen
             frames_dir = "data/frames"
             if os.path.exists(frames_dir):
-                detections = predict_frames(model_info["path"], frames_dir, max_frames=20, save_dir=model_info["save_dir"])
+                detections = predict_frames(model_info["path"], frames_dir, max_frames=None, save_dir=model_info["save_dir"])
                 results_summary[model_info["name"]] = detections
             else:
                 print("Usage:")

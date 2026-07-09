@@ -8,6 +8,7 @@ import sys
 import cv2
 from pathlib import Path
 from datetime import datetime
+import json
 
 # Add parent directory to path for imports
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -55,6 +56,15 @@ def extract_frames(video_path, output_dir="data/frames", frame_interval=1):
     
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
+
+    video_name = Path(video_path).stem
+    manifest = {
+        "video_name": video_name,
+        "source_video": os.path.abspath(video_path),
+        "frame_interval": frame_interval,
+        "extracted_at": datetime.now().isoformat(timespec="seconds"),
+        "frames": []
+    }
     
     print(f"🎬 Extrahiere Frames aus Video: {video_path}")
     
@@ -88,11 +98,17 @@ def extract_frames(video_path, output_dir="data/frames", frame_interval=1):
             break
         
         if frame_count % frame_interval == 0:
-            frame_filename = f"frame_{extracted_count:06d}.jpg"
+            timestamp_sec = frame_count / fps if fps else 0.0
+            frame_filename = f"{video_name}_frame_{frame_count:06d}_t{timestamp_sec:.3f}.jpg"
             frame_path = os.path.join(output_dir, frame_filename)
             
             cv2.imwrite(frame_path, frame)
             frame_paths.append(frame_path)
+            manifest["frames"].append({
+                "frame_file": frame_filename,
+                "frame_index": frame_count,
+                "timestamp_sec": round(timestamp_sec, 3)
+            })
             extracted_count += 1
             
             if extracted_count % 50 == 0:
@@ -101,8 +117,13 @@ def extract_frames(video_path, output_dir="data/frames", frame_interval=1):
         frame_count += 1
     
     cap.release()
+
+    manifest_path = os.path.join(output_dir, f"{video_name}_frames_manifest.json")
+    with open(manifest_path, "w", encoding="utf-8") as manifest_file:
+        json.dump(manifest, manifest_file, indent=2, ensure_ascii=False)
     
     print(f"✅ {extracted_count} Frames extrahiert und gespeichert in: {output_dir}")
+    print(f"🧾 Manifest gespeichert: {manifest_path}")
     
     return frame_paths
 
