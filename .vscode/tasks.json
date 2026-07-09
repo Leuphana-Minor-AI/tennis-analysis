@@ -11,6 +11,17 @@
 			"isBackground": false,
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "run-v001-pose-inference",
+			"type": "shell",
+			"command": "C:/Users/Ben/AppData/Local/Python/pythoncore-3.14-64/python.exe",
+			"args": [
+				"scripts/run_v001_pose_inference.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }

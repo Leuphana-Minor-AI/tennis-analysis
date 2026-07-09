@@ -1,6 +1,6 @@
-# 🎾 Tennis Analysis - YOLOv8 Objektdetektor
+# 🎾 Tennis Analysis - Pose-to-Stroke Pipeline
 
-Ein professionelles System zur Erkennung von **Tennisbällen**, **Schlägern**, **Spielern** und anderen Tennis-Objekten mit YOLOv8. Das System nutzt zwei Modelle parallel: **yolo26s-pose** für Pose-Erkennung und **yolov8x** für hochgenaue Objektdetektion.
+Ein Tennis-Analyse-System für einen getrennten Pose-to-Stroke-Workflow. Das Projekt extrahiert Frames aus Videos, erzeugt video-basierte Splits, kann Pose-Keypoints auf Frames speichern und bereitet die Daten für eine spätere Stroke-Klassifikation vor.
 
 ---
 
@@ -37,15 +37,30 @@ Die folgenden Modelle sollten im `models/` Verzeichnis vorhanden sein:
 ### 4. Vorhersagen machen
 
 ```bash
-# Inference auf alle Bilder in data/frames - nutzt BEIDE Modelle parallel
+# Inference auf alle Bilder in data/frames - nutzt verfügbare Modelle
 python scripts/inference.py
 
 # Ausgabe: 
-# - results/predictions/yolo26s-pose/  (Pose-Modell Ergebnisse)
-# - results/predictions/yolov8x/       (YOLOv8x Ergebnisse)
+# - data/results/predictions/yolo26s-pose/  (Pose-Modell Ergebnisse)
+# - data/results/predictions/yolov8x/       (YOLOv8x Ergebnisse, falls vorhanden)
 ```
 
-### 5. Video-Verarbeitung (Neu)
+### 5. Daten vorbereiten für Pose und Stroke
+
+```bash
+# Frames extrahieren und dabei Video-Metadaten als Manifest speichern
+python scripts/process_video.py data/video/V001.mp4
+
+# Video-level Splits erstellen und Annotation-Ordner vorbereiten
+python scripts/prepare_dataset_splits.py
+```
+
+Ergebnis:
+- Frames liegen in `data/frames/`
+- Split-Daten liegen in `data/splits/`
+- Annotierungsstubs für Pose und Stroke liegen unter `data/splits/{train,val,test}/`
+
+### 6. Video-Verarbeitung (Neu)
 
 #### Option A: Komplette Pipeline (Video → Frames → Inference → Cleanup)
 Extrahiert Frames aus Video, führt Inference mit beiden Modellen durch, und löscht Frames automatisch:
@@ -103,11 +118,15 @@ tennis-analysis/
 │   └── predictions/        # Vorhersage-Ergebnisse
 │       ├── yolo26s-pose/   # Pose-Modell Ergebnisse
 │       └── yolov8x/        # YOLOv8x Ergebnisse
+├── data/results/           # Aktuelle Ausgaben aus Inference und Annotation
+│   └── predictions/
 ├── scripts/
 │   ├── download_dataset.py    # Roboflow Download (optional)
 │   ├── train.py               # Training
 │   ├── evaluate.py            # Evaluierung
-│   └── inference.py           # Dual-Model Inference
+│   ├── inference.py           # Dual-Model Inference
+│   ├── process_video.py       # Frames extrahieren + Inference
+│   └── prepare_dataset_splits.py  # Video-level Splits + Annotation Scaffold
 ├── config.py              # Zentrale Konfiguration
 ├── requirements.txt       # Python Dependencies
 └── README.md
@@ -119,7 +138,7 @@ tennis-analysis/
 
 ### Schritt 1: Daten vorbereiten
 
-- Platziere Video-Dateien in `data/videos/`
+- Platziere Video-Dateien in `data/video/`
 - Frame-Extraktion: Videos werden in Frames im `data/frames/` Verzeichnis konvertiert
 - Annotations im `data/annotations/` Verzeichnis sollten vorhanden sein
 
@@ -234,9 +253,8 @@ python scripts/process_video.py data/videos/V002.mp4
 
 **Workflow:**
 1. 🎬 Extrahiert alle Frames aus Video
-2. 🤖 Führt yolov8x aus
-3. 🤖 Führt yolo26s-pose aus
-4. 💾 Speichert annotierte Frames in `results/predictions/`
+2. 🤖 Führt verfügbare Modelle aus
+3. 💾 Speichert annotierte Frames in `data/results/predictions/`
 5. 🗑️  Löscht extrahierte Frames automatisch
 
 ---
@@ -258,6 +276,22 @@ python scripts/run_yolov8x_200frames.py
 - ✅ Speicheroptimiert mit `stream=True`
 
 **Beispiel Output:**
+
+---
+
+## 🧭 Empfohlener Workflow
+
+1. Video hochladen.
+2. Frames extrahieren und Metadaten sichern.
+3. Nach Video splitten mit `prepare_dataset_splits.py`.
+4. Wenn nötig, Pose-Keypoints auf den Roh-Frames annotieren und das Pose-Modell feinjustieren.
+5. Pose-Inference auf den Split-Frames ausführen und Keypoints pro Frame speichern.
+6. Aus den Keypoints feste Clip-Fenster bauen.
+7. Diese Clips mit Stroke-Labels versehen.
+8. Stroke-Klassifikator auf den Pose-Sequenzen trainieren.
+9. Auf Clip-Ebene evaluieren.
+
+Wichtig: Für Stroke-Klassifikation sollten keine gerenderten Inference-Bilder als Label-Ziel verwendet werden. Labels gehören auf Clip-Fenster und Keypoint-Sequenzen.
 ```
 Bearbeitete Frames: 200
 Frames mit Detektionen: 194 (97.0%)
